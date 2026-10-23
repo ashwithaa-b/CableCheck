@@ -1,14 +1,20 @@
 # 10 Real Questions My User Will Ask
 
+## Target User
+Procurement engineer at a Chennai-based EPC contractor
+evaluating cable and switchgear manufacturers.
+
+## Questions
+
 | # | Question | Where the answer is (document, page) | Needs more than one page? |
 |---|---|---|---|
-| 1 | What types of cables are available, and what are their main uses? | Cable technical documentation, page to be identified | No |
-| 2 | What is the difference between copper cables and aluminium cables? | Cable technical documentation, pages to be identified | Yes |
-| 3 | How do I choose the right cable size based on current rating, voltage, and application? | Cable sizing and electrical specifications documents, pages to be identified | Yes |
-| 4 | What are the common causes of cable overheating, and how can I prevent them? | Cable safety and installation documentation, pages to be identified | Yes |
-| 5 | What does cable insulation mean, and what are the common insulation materials? | Cable insulation documentation, page to be identified | No |
-| 6 | What is the difference between single-core and multicore cables? | Cable construction documentation, page to be identified | No |
-| 7 | How can I identify the voltage rating of a cable? | Cable markings and specifications documentation, page to be identified | No |
-| 8 | What safety precautions should I follow when installing electrical cables? | Electrical cable installation and safety documentation, page to be identified | No |
-| 9 | What is the difference between armoured and unarmoured cables, and where should each be used? | Cable types and installation documentation, pages to be identified | No |
-| 10 | What is the exact price of a 100-metre cable roll at my nearest electrical shop today? | None — the documents do not contain live local shop prices | No |
+| 1 | Does KEI Industries manufacture EHV cables, and up to what voltage rating? | KEI Industries Annual Report, page to be identified | No |
+| 2 | Does Polycab India manufacture 400 kV EHV cables? | Polycab Annual Report, page to be identified | No |
+| 3 | What cable manufacturing capacities are reported by KEI Industries? | KEI Industries Annual Report, pages to be identified | Yes |
+| 4 | What switchgear products are manufactured by ABB India? | ABB India Annual Report, pages to be identified | Yes |
+| 5 | What switchgear and electrical equipment products are reported by Siemens Ltd? | Siemens Ltd Annual Report, pages to be identified | Yes |
+| 6 | What was Polycab India's W&C segment revenue in FY2024-25? | Polycab Annual Report FY2024-25, page to be identified | No |
+| 7 | What was Polycab India's W&C segment profit margin in FY2024-25? | Polycab Annual Report FY2024-25, page to be identified | Yes |
+| 8 | What was KEI Industries' total revenue in FY2024-25? | KEI Industries Annual Report FY2024-25, page to be identified | No |
+| 9 | Which of the six manufacturers reported export revenue exceeding 10% of sales in FY2024-25? | Annual Reports of all six manufacturers, pages to be identified | Yes |
+| 10 | What was Hitachi Energy India's total revenue in FY2024-25? | Hitachi Energy India Annual Report FY2024-25, page to be identified | No |
