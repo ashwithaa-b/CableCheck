@@ -1,0 +1,26 @@
+CableCheck - Sample Vendor Document 3
+
+Vendor: Demo Power Technologies
+Document Type: Synthetic Annual Report Extract
+
+Financial Year: FY2024-25
+
+Business Segments:
+1. Wires and Cables (W&C)
+2. Electrical Equipment
+3. Switchgear
+
+Financial Performance:
+Total Revenue: INR 800 crore
+W&C Segment Revenue: INR 500 crore
+W&C Segment Profit: INR 75 crore
+W&C Segment Profit Margin: 15%
+
+Manufacturing Capabilities:
+- EHV cables up to 220 kV
+- Medium-voltage cables up to 33 kV
+- Industrial switchgear
+
+Note:
+This is synthetic data created for testing CableCheck.
+All company names, specifications, and financial figures are fictional.

@@ -1,0 +1,18 @@
+CableCheck - Sample Vendor Document 1
+
+Vendor: Demo Cable Industries
+Document Type: Synthetic Vendor Profile
+
+Products:
+- Low-voltage power cables
+- Medium-voltage power cables
+- Control cables
+
+Voltage Ratings:
+- 1.1 kV
+- 11 kV
+- 33 kV
+
+Note:
+This is fictional test data created for the CableCheck project.
+It does not represent a real manufacturer.

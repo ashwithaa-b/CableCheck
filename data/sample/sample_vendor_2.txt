@@ -1,0 +1,25 @@
+CableCheck - Sample Vendor Document 2
+
+Vendor: Demo Electrical Systems
+Document Type: Synthetic Vendor Profile
+
+Products:
+- High-voltage power cables
+- Extra-high-voltage (EHV) cables
+- Industrial switchgear
+- Distribution transformers
+
+Voltage Ratings:
+- 33 kV
+- 132 kV
+- 220 kV
+- 400 kV
+
+Financial Information:
+Annual Revenue: INR 500 crore
+Export Revenue: INR 75 crore
+Export Contribution: 15%
+
+Note:
+This is fictional test data created for the CableCheck project.
+All specifications and financial figures are imaginary.
