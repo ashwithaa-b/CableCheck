@@ -6,6 +6,7 @@ from google.genai import types
 
 from app.config import Settings, get_settings
 from app.schemas import ChatRequest, ChatResponse
+from app.usage import get_usage_summary, record_usage
 
 
 app = FastAPI(title="CableCheck AI", version="0.1.0")
@@ -21,6 +22,12 @@ def health(settings: SettingsDep) -> dict:
         "app": settings.app_name,
         "environment": settings.environment,
     }
+
+
+# Gemini API usage endpoint
+@app.get("/usage")
+def usage() -> dict:
+    return get_usage_summary()
 
 
 # AI Chat endpoint
@@ -55,7 +62,7 @@ def chat(request: ChatRequest, settings: SettingsDep):
             used_model = settings.gemini_model
 
         except Exception as e:
-            # Show the actual primary model error
+            # Show the primary model error
             print(
                 f"Primary model failed: {type(e).__name__}: {e}",
                 flush=True,
@@ -79,6 +86,15 @@ def chat(request: ChatRequest, settings: SettingsDep):
             raise HTTPException(
                 status_code=502,
                 detail="Gemini returned an empty response",
+            )
+
+        # Record token usage
+        try:
+            record_usage(used_model, response)
+        except Exception as e:
+            print(
+                f"Usage tracking failed: {type(e).__name__}: {e}",
+                flush=True,
             )
 
         print(
