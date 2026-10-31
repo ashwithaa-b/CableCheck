@@ -1,7 +1,6 @@
-from pathlib import Path
-from datetime import date
-import hashlib
 import csv
+import hashlib
+from pathlib import Path
 
 raw_folder = Path("data/raw")
 manifest_path = Path("data/manifest.csv")

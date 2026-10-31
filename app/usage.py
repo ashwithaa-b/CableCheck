@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
 
@@ -16,7 +16,7 @@ def record_usage(model: str, response) -> None:
         return
 
     record = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "model": model,
         "input_tokens": metadata.prompt_token_count or 0,
         "output_tokens": metadata.candidates_token_count or 0,

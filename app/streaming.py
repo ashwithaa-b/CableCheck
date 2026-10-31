@@ -8,7 +8,6 @@ from google.genai import types
 from app.config import get_settings
 from app.schemas import ChatRequest
 
-
 # Create the streaming router
 router = APIRouter()
 
