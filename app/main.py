@@ -7,9 +7,12 @@ from google.genai import types
 from app.config import Settings, get_settings
 from app.schemas import ChatRequest, ChatResponse
 from app.usage import get_usage_summary, record_usage
+from app.streaming import router as streaming_router
 
 
 app = FastAPI(title="CableCheck AI", version="0.1.0")
+
+app.include_router(streaming_router)
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
