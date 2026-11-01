@@ -1,8 +1,12 @@
+import os
+import random
+import time
 from typing import Annotated
 
+import psycopg
 from fastapi import Depends, FastAPI, HTTPException
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
 from app.config import Settings, get_settings
 from app.schemas import ChatRequest, ChatResponse
@@ -16,9 +20,67 @@ app.include_router(streaming_router)
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
-# Health check endpoint
+# --------------------------------------------------
+# Retry Configuration
+# --------------------------------------------------
+
+MAX_ATTEMPTS = 3
+BASE_DELAY_SECONDS = 1.0
+MAX_DELAY_SECONDS = 8.0
+
+RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+
+
+def is_retryable_error(error: Exception) -> bool:
+    """Retry temporary Gemini API failures only."""
+
+    if isinstance(error, errors.APIError):
+        return error.code in RETRYABLE_STATUS_CODES
+
+    return isinstance(error, (TimeoutError, ConnectionError))
+
+
+def generate_with_retry(client, model: str, message: str):
+    """Call Gemini with bounded exponential backoff and jitter."""
+
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            return client.models.generate_content(
+                model=model,
+                contents=message,
+            )
+
+        except Exception as error:
+            is_last_attempt = attempt == MAX_ATTEMPTS - 1
+
+            if is_last_attempt or not is_retryable_error(error):
+                raise
+
+            exponential_delay = BASE_DELAY_SECONDS * (2 ** attempt)
+            delay = min(exponential_delay, MAX_DELAY_SECONDS)
+
+            # Add randomized jitter to avoid synchronized retries.
+            delay += random.uniform(0, 0.5)
+
+            print(
+                f"Temporary Gemini error for {model}: "
+                f"{type(error).__name__}. "
+                f"Retrying in {delay:.2f}s "
+                f"(attempt {attempt + 2}/{MAX_ATTEMPTS}).",
+                flush=True,
+            )
+
+            time.sleep(delay)
+
+
+# --------------------------------------------------
+# Health Check Endpoint
+# --------------------------------------------------
+
 @app.get("/health")
 def health(settings: SettingsDep) -> dict:
+    """Check whether the FastAPI application is running."""
+
     return {
         "status": "ok",
         "app": settings.app_name,
@@ -26,13 +88,58 @@ def health(settings: SettingsDep) -> dict:
     }
 
 
-# Gemini API usage endpoint
+# --------------------------------------------------
+# Database Readiness Endpoint
+# --------------------------------------------------
+
+@app.get("/ready")
+def ready() -> dict:
+    """Check whether PostgreSQL is available."""
+
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is not configured",
+        )
+
+    try:
+        with psycopg.connect(
+            database_url,
+            connect_timeout=3,
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+
+        return {
+            "status": "ready",
+            "database": "connected",
+        }
+
+    except psycopg.Error:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is unavailable",
+        ) from None
+
+
+# --------------------------------------------------
+# Gemini API Usage Endpoint
+# --------------------------------------------------
+
 @app.get("/usage")
 def usage() -> dict:
+    """Return Gemini token usage and estimated API costs."""
+
     return get_usage_summary()
 
 
-# AI Chat endpoint
+# --------------------------------------------------
+# AI Chat Endpoint
+# --------------------------------------------------
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, settings: SettingsDep):
 
@@ -43,59 +150,59 @@ def chat(request: ChatRequest, settings: SettingsDep):
         )
 
     try:
-        # Create Gemini client with a 15-second HTTP timeout
         client = genai.Client(
             api_key=settings.gemini_api_key,
             http_options=types.HttpOptions(timeout=15000),
         )
 
         try:
-            # Try primary Gemini model
             print(
                 f"Trying primary model: {settings.gemini_model}",
                 flush=True,
             )
 
-            response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=request.message,
+            response = generate_with_retry(
+                client,
+                settings.gemini_model,
+                request.message,
             )
 
             used_model = settings.gemini_model
 
-        except Exception as e:
-            # Show the primary model error
+        except Exception as error:
             print(
-                f"Primary model failed: {type(e).__name__}: {e}",
+                f"Primary model failed: "
+                f"{type(error).__name__}: {error}",
                 flush=True,
             )
 
             print(
-                f"Trying fallback model: {settings.gemini_fallback_model}",
+                f"Trying fallback model: "
+                f"{settings.gemini_fallback_model}",
                 flush=True,
             )
 
-            # Try fallback Gemini model
-            response = client.models.generate_content(
-                model=settings.gemini_fallback_model,
-                contents=request.message,
+            response = generate_with_retry(
+                client,
+                settings.gemini_fallback_model,
+                request.message,
             )
 
             used_model = settings.gemini_fallback_model
 
-        # Check Gemini response
         if not response.text:
             raise HTTPException(
                 status_code=502,
                 detail="Gemini returned an empty response",
             )
 
-        # Record token usage
         try:
             record_usage(used_model, response)
-        except Exception as e:
+
+        except Exception as error:
             print(
-                f"Usage tracking failed: {type(e).__name__}: {e}",
+                f"Usage tracking failed: "
+                f"{type(error).__name__}: {error}",
                 flush=True,
             )
 
@@ -112,9 +219,10 @@ def chat(request: ChatRequest, settings: SettingsDep):
     except HTTPException:
         raise
 
-    except Exception as e:
+    except Exception as error:
         print(
-            f"Gemini API error: {type(e).__name__}: {e}",
+            f"Gemini API error: "
+            f"{type(error).__name__}: {error}",
             flush=True,
         )
 
