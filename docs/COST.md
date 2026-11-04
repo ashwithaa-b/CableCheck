@@ -10,7 +10,7 @@ The application tracks token usage and estimates API costs in USD.
 
 Primary model: gemini-3.6-flash
 
-Fallback model: gemini-3.7-flash
+Fallback model: gemini-3.5-flash-lite
 
 ## 3. API Pricing
 

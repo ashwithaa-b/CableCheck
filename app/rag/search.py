@@ -5,6 +5,7 @@ import psycopg
 from sentence_transformers import SentenceTransformer
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+NEIGHBOR_CHUNK_RADIUS = 2
 
 
 @lru_cache(maxsize=1)
@@ -17,8 +18,8 @@ def search_documents(question, top_k=5):
     """
     Search document chunks using pgvector.
 
-    For each retrieved chunk, include its immediate neighboring
-    chunks from the same document and PDF page.
+    For each retrieved chunk, include nearby chunks from the same
+    document and PDF page.
 
     Returns:
         document, page, chunk_id, text, similarity
@@ -86,8 +87,8 @@ def search_documents(question, top_k=5):
                     (
                         document,
                         page,
-                        max(0, chunk_id - 1),
-                        chunk_id + 1,
+                        max(0, chunk_id - NEIGHBOR_CHUNK_RADIUS),
+                        chunk_id + NEIGHBOR_CHUNK_RADIUS,
                     ),
                 )
 

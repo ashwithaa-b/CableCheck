@@ -219,7 +219,7 @@ Example:
 ```env
 GEMINI_API_KEY=your_api_key
 GEMINI_MODEL=gemini-3.6-flash
-GEMINI_FALLBACK_MODEL=gemini-3.7-flash
+GEMINI_FALLBACK_MODEL=gemini-3.5-flash-lite
 ```
 
 Replace `your_api_key` with a valid Gemini API key.
@@ -370,7 +370,7 @@ CableCheck uses Google Gemini for AI-generated responses.
 
 ### Fallback Model
 
-`gemini-3.7-flash`
+`gemini-3.5-flash-lite`
 
 The application attempts to use the primary model first.
 

@@ -5,181 +5,151 @@
 **Project:** CableCheck
 **Evaluation stage:** Week 3
 **Evaluation date:** 4 November 2026
-**Status:** In Progress
+**Status:** Complete; includes provisional and partial-pass results
 
 ### Objective
 
-Evaluate CableCheck's ability to retrieve information from annual reports, generate grounded answers, perform financial calculations, and provide accurate PDF citations.
-
-## 2. Dataset
-
-Currently ingested:
-
-| Company | Annual Reports |
-|---|---|
-| Polycab India | FY2024, FY2025, FY2026 |
-
-**Total PDF pages:** 1,252
-**Total document chunks:** 6,459
-
-Other manufacturers' annual reports have not yet been ingested.
-
-## 3. System Configuration
-
-- Backend: FastAPI
-- Database: PostgreSQL + pgvector
-- Embedding model: all-MiniLM-L6-v2
-- Answer generation: Gemini
-- Retrieval: Semantic vector similarity
-- Retrieval configuration: top_k=5, with neighboring chunks
-- Citation format: Document filename and PDF page number
-
-## 4. Evaluation Results
-
-| Q# | Question Topic | Expected Behavior | Observed Result | Status |
-|---|---|---|---|---|
-| Q1 | KEI EHV cable voltage rating | Abstain without KEI evidence | Correct abstention, no citations | PASS |
-| Q2 | Polycab 400 kV EHV cables | Avoid unsupported claims | Abstained, cited FY2026 p18 | PASS |
-| Q3 | KEI manufacturing capacities | Abstain without KEI evidence | HTTP 502 during generation | BLOCKED |
-| Q4 | ABB switchgear products | Abstain without ABB evidence | Not tested | PENDING |
-| Q5 | Siemens electrical products | Abstain without Siemens evidence | Not tested | PENDING |
-| Q6 | Polycab W&C segment revenue | Correct figures and citations | Correct standalone and consolidated figures | PASS |
-| Q7 | Polycab W&C operating margin | Correct calculation and citation | 13.44% standalone margin | PASS |
-| Q8 | KEI FY2025 revenue | Abstain without KEI evidence | Not tested | PENDING |
-| Q9 | Export revenue comparison | Abstain without all required reports | Not tested | PENDING |
-| Q10 | Hitachi Energy FY2025 revenue | Abstain without Hitachi evidence | Not tested | PENDING |
-
-### Current Results
-
-- Total evaluation questions: 10
-- Passed: 4
-- Blocked: 1
-- Pending: 5
-- Completed evaluations: 4/10
-
-These results do not represent an overall accuracy score because six questions have not been successfully evaluated.
-
-## 5. Verified Financial Answers
-
-### Question 6: Polycab Wires and Cables Revenue
-
-**Financial year:** FY2024-25
-
-| Reporting Basis | Revenue (INR Million) | PDF Page |
-|---|---:|---:|
-| Consolidated | 187,575.07 | 318 |
-| Standalone | 184,072.48 | 409 |
-
-Additional standalone segment information:
-
-- External sales: INR 185,459.27 million
-- Inter-segment revenue: INR 3,415.72 million
-- Total segment income: INR 188,874.99 million
-- Supporting PDF page: 427
-
-**Result:** PASS
-
-### Question 7: Polycab Operating Profit Margin
-
-**Reporting basis:** Standalone
-**Financial year:** FY2024-25
-
-Segment operating results: INR 25,386.59 million
-
-Segment total income: INR 188,874.99 million
-
-Operating Margin (%) =
-(Segment Operating Results / Segment Total Income) × 100
-
-= (25,386.59 / 188,874.99) × 100
-
-**Operating Margin = 13.44%**
-
-**Source:** polycab_fy2025_annual-report.pdf, PDF page 427
-
-**Result:** PASS
-
-## 6. Citation Validation
-
-CableCheck supports source references such as:
-
-- [Source 5]
-- [Source 7, Source 8]
-- [Source 9, Source 10]
-
-Grouped citation extraction was corrected during Week 3.
-
-The live API successfully returned the supporting pages:
-
-- PDF page 427
-- PDF page 318
-- PDF page 409
-
-Duplicate citations from the same PDF page are removed.
-
-## 7. Known Issues
-
-### Issue 1: HTTP 502 on Question 3
-
-Question:
-
-"What cable manufacturing capacities are reported by KEI Industries?"
-
-Observed response:
-
-`Unable to generate a document-grounded answer`
-
-Status: Unresolved.
-
-The failure occurs after retrieval, within the answer-generation or response-processing stage.
-
-The exact exception has not yet been captured.
-
-Diagnostic logging has been added to app/main.py.
-
-### Issue 2: Missing Manufacturer Reports
-
-Only Polycab annual reports are currently ingested.
-
-Questions involving KEI, ABB, Siemens, and Hitachi Energy cannot yet be answered using company-specific evidence.
-
-### Issue 3: Retrieval Limitations
-
-Current retrieval uses semantic vector similarity without company-specific metadata filtering.
-
-Queries about manufacturers absent from the dataset may retrieve unrelated Polycab passages.
-
-### Issue 4: Output Formatting
-
-Some PowerShell responses display incorrect Unicode characters for the rupee symbol.
-
-The cause has not yet been confirmed.
-
-## 8. Automated Tests
-
-Latest reported test result:
-
-**17 passed**
-
-Additional targeted retry tests:
-
-**3 passed**
-
-## 9. Next Steps
-
-1. Diagnose and resolve Question 3's HTTP 502 error.
-2. Complete evaluation of Questions 4, 5, 8, 9, and 10.
-3. Add a regression test for grouped citation extraction.
-4. Improve company-specific retrieval filtering.
-5. Ingest the remaining manufacturers' annual reports.
-6. Update this report with final evaluation results.
-7. Commit the completed Week 3 work.
-8. Create and push the Week 3 Git tag.
-
-## 10. Conclusion
-
-CableCheck has demonstrated successful document retrieval, grounded financial question answering, operating-margin calculation, and PDF citation generation.
-
-Four evaluation questions have passed.
-
-The Week 3 evaluation remains incomplete because one question is blocked by an HTTP 502 error and five questions have not yet been tested.
+Evaluate CableCheck's ability to retrieve information from annual reports,
+abstain when relevant company documents are absent, produce grounded answers,
+perform financial calculations, and cite supporting PDF pages.
+
+## 2. Dataset and System
+
+The evaluation corpus contains Polycab India annual reports for FY2023-24,
+FY2024-25, and FY2025-26. KEI Industries reports have not been ingested.
+The corpus comprises 1,252 PDF pages and 6,459 document chunks.
+
+CableCheck uses FastAPI, PostgreSQL with pgvector, the
+`all-MiniLM-L6-v2` embedding model, and Gemini for answer generation. Search
+uses semantic vector similarity (`top_k=5`) and nearby chunks from the same
+document page. Citations identify a source document and PDF page.
+
+## 3. Evaluation Methodology
+
+The ten questions in `QUESTIONS.md` were evaluated against their intended
+behavior and the available annual-report evidence:
+
+- For companies whose reports are absent, check that CableCheck abstains
+  rather than asserting unsupported facts.
+- For Polycab questions, review the answer against report excerpts, including
+  the financial year, reporting basis, metric, calculations, and cited pages
+  where applicable.
+- Mark citation-dependent answers provisional when their supporting passages
+  have not been fully verified.
+- Record known errors and uncertainty explicitly; a provisional or partial
+  result is not counted as a full pass.
+
+This is a qualitative, question-by-question evaluation. No aggregate retrieval
+metric such as Recall@5 was measured, and the results should not be read as a
+statistical accuracy estimate.
+
+## 4. Results
+
+| Q# | Question | Observed result | Status |
+|---|---|---|---|
+| Q1 | Does KEI Industries manufacture EHV cables, and up to what voltage rating? | Correctly abstained because KEI reports are not ingested. | PASS |
+| Q2 | Does Polycab India manufacture 400 kV EHV cables? | Cautiously abstained from claiming Polycab manufactures 400 kV EHV cables without sufficient evidence. | PASS |
+| Q3 | What cable manufacturing capacities are reported by KEI Industries? | Correctly abstained because KEI reports are not ingested. | PASS |
+| Q4 | What are Polycab India's major business segments? | Correctly identified Wires & Cables, FMEG, and EPC. | PASS |
+| Q5 | What products are included in Polycab India's Wires & Cables segment? | Identified W&C products; citation support has not been fully verified. | PROVISIONAL PASS |
+| Q6 | What was Polycab India's W&C segment revenue in FY2024-25? | Correctly reported W&C revenue with standalone and consolidated bases distinguished. | PASS |
+| Q7 | What was Polycab India's W&C segment profit margin in FY2024-25? | Correctly calculated the FY2024-25 standalone W&C operating margin as approximately 13.44%. | PASS |
+| Q8 | How did Polycab India's W&C segment revenue change between FY2023-24 and FY2024-25? | Correctly compared W&C revenue and reported consolidated and standalone growth. | PASS |
+| Q9 | What does Polycab India report about its EHV cable business? | Correctly cited EHV cable laying by the EPC division; may have missed evidence about EHV cable manufacturing. | PROVISIONAL PASS |
+| Q10 | What was Polycab India's total revenue in FY2024-25? | Distinguished consolidated revenue, originally reported standalone revenue, and restated standalone revenue. However, the consolidated total-income figure was inconsistent, and the standalone segment total-income figure was inadequately explained. | PARTIAL PASS |
+
+### Outcome Counts
+
+- **Full passes:** 7/10
+- **Provisional passes:** 2/10
+- **Partial passes:** 1/10
+- **Not evaluated:** 0/10
+
+Provisional and partial results are not counted as full passes. Therefore, the
+evaluation does not support a claim that all ten questions passed.
+
+## 5. Financial Results and Known Accuracy Issue
+
+### Question 7: Standalone W&C Operating Margin
+
+CableCheck calculated the FY2024-25 standalone W&C operating margin as:
+
+`(Segment operating results / segment total income) × 100 ≈ 13.44%`
+
+The answer was assessed as correct.
+
+### Question 10: Total Revenue
+
+The answer correctly distinguished consolidated revenue, originally reported
+standalone revenue, and restated standalone revenue. It did not consistently
+ground all related income figures:
+
+- It gave consolidated total income as **₹224,608.84 million**, rather than the
+  FY2024-25 audited consolidated total income of **₹226,159.49 million**.
+- It included a standalone segment total-income figure without adequately
+  explaining its scope or how it related to company-level total income.
+
+Accordingly, Q10 is a **partial pass**, not a full pass. Revenue from
+operations, total income, and segment total income are distinct metrics and
+should be labeled and supported separately.
+
+## 6. Key Findings and Remaining Limitations
+
+- Abstention worked for questions requiring KEI reports that are absent from
+  the corpus.
+- The system answered several Polycab segment and financial questions
+  successfully, including a standalone operating-margin calculation.
+- Citation support remains unverified for Q5. Q9 may conflate or incompletely
+  cover EHV cable laying and EHV cable manufacturing.
+- Q10 shows that identifying multiple accounting bases is not sufficient:
+  answers must also preserve the metric and scope of each figure, and explain
+  reported versus restated comparatives using source evidence.
+- Semantic retrieval can return neighboring, similarly worded, or wrong-period
+  passages. Company, year, reporting basis, and metric are not currently
+  enforced as structured filters.
+- No quantitative retrieval benchmark was run; this report makes no Recall@k
+  or general accuracy claim.
+
+## 7. Improvements Implemented During Week 3
+
+- Added PDF parsing that preserves document names and PDF page numbers, plus
+  chunking and pgvector-backed embedding ingestion and search.
+- Added neighboring-chunk retrieval so answer-bearing text split across chunks
+  is more likely to reach the prompt.
+- Improved `/ask` handling so a failed or empty primary Gemini response can
+  use the configured fallback, while avoiding a duplicate call when both
+  model settings are identical.
+- Added failure-stage/model logging for generation failures and regression
+  tests for fallback and retrieval behavior.
+- Improved citation extraction for grouped source references and duplicate
+  citations from the same page.
+- Added general answer instructions to distinguish revenue from operations
+  from total income, standalone from consolidated reporting, and reported
+  from restated comparatives. The instructions also require figure-specific
+  citations and prohibit explaining a restatement beyond the supplied text.
+
+## 8. Next Steps
+
+1. Verify Q5 citations against the cited report pages and claims.
+2. Re-evaluate Q9 with separate checks for EHV cable laying and EHV cable
+   manufacturing; expand report evidence if needed.
+3. Re-run Q10 and verify every reported figure against its exact source,
+   including whether it is company-level or segment-level and reported or
+   restated.
+4. Improve retrieval using document/company, fiscal-year, reporting-basis, and
+   metric metadata or filters where available.
+5. Add claim-to-source validation for financial values and labels, and ensure
+   citations support the specific claims they accompany.
+6. Create a repeatable evaluation set with source passages and citation checks;
+   measure retrieval metrics only after defining and running that benchmark.
+7. Ingest additional manufacturers' reports before evaluating questions that
+   require those companies' evidence.
+
+## 9. Conclusion
+
+The evaluation has seven full passes, two provisional passes, and one partial
+pass. CableCheck demonstrated useful abstention and several successful
+document-grounded answers, but Q5 and Q9 still need citation or coverage
+verification, and Q10 exposes remaining financial-grounding errors. These
+results are a qualitative evaluation of the ten listed questions, not a
+generalized accuracy score.
