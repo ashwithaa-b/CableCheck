@@ -4,7 +4,6 @@ from functools import lru_cache
 import psycopg
 from sentence_transformers import SentenceTransformer
 
-
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 
@@ -28,9 +27,7 @@ def search_documents(question, top_k=5):
     database_url = os.environ.get("DATABASE_URL")
 
     if not database_url:
-        raise ValueError(
-            "DATABASE_URL environment variable is not set"
-        )
+        raise ValueError("DATABASE_URL environment variable is not set")
 
     if top_k < 1:
         raise ValueError("top_k must be at least 1")
@@ -38,14 +35,9 @@ def search_documents(question, top_k=5):
     # Step 1: Generate the question embedding
     model = get_embedding_model()
 
-    question_embedding = model.encode(
-        question,
-        normalize_embeddings=True
-    )
+    question_embedding = model.encode(question, normalize_embeddings=True)
 
-    vector = "[" + ",".join(
-        str(float(value)) for value in question_embedding
-    ) + "]"
+    vector = "[" + ",".join(str(float(value)) for value in question_embedding) + "]"
 
     matches = []
     seen = set()
@@ -53,7 +45,6 @@ def search_documents(question, top_k=5):
     # Step 2: Retrieve the top matching chunks
     with psycopg.connect(database_url) as conn:
         with conn.cursor() as cur:
-
             cur.execute(
                 """
                 SELECT
@@ -74,7 +65,6 @@ def search_documents(question, top_k=5):
 
             # Step 3: Include each match and its neighboring chunks
             for row in results:
-
                 document = row[0]
                 page = row[1]
                 chunk_id = row[2]
@@ -104,7 +94,6 @@ def search_documents(question, top_k=5):
                 neighboring_chunks = cur.fetchall()
 
                 for neighbor in neighboring_chunks:
-
                     key = (
                         neighbor[0],
                         neighbor[1],
@@ -116,23 +105,21 @@ def search_documents(question, top_k=5):
 
                     seen.add(key)
 
-                    matches.append({
-                        "document": neighbor[0],
-                        "page": neighbor[1],
-                        "chunk_id": neighbor[2],
-                        "text": neighbor[3],
-                        "similarity": similarity,
-                    })
+                    matches.append(
+                        {
+                            "document": neighbor[0],
+                            "page": neighbor[1],
+                            "chunk_id": neighbor[2],
+                            "text": neighbor[3],
+                            "similarity": similarity,
+                        }
+                    )
 
     return matches
 
 
 if __name__ == "__main__":
-
-    question = (
-        "What was Polycab India's W&C segment "
-        "operating profit margin in FY2024-25?"
-    )
+    question = "What was Polycab India's W&C segment operating profit margin in FY2024-25?"
 
     print("\nQuestion:", question)
     print("\nSearching annual reports...")
@@ -142,7 +129,6 @@ if __name__ == "__main__":
     print("\nTotal retrieved chunks:", len(results))
 
     for index, result in enumerate(results, start=1):
-
         print("\n" + "=" * 50)
         print(f"RESULT {index}")
         print("=" * 50)

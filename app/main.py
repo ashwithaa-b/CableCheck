@@ -9,14 +9,14 @@ from google import genai
 from google.genai import errors, types
 
 from app.config import Settings, get_settings
+from app.rag.search import search_documents
 from app.schemas import (
-    ChatRequest,
-    ChatResponse,
     AskRequest,
     AskResponse,
+    ChatRequest,
+    ChatResponse,
     Citation,
 )
-from app.rag.search import search_documents
 from app.streaming import router as streaming_router
 from app.usage import get_usage_summary, record_usage
 
@@ -44,7 +44,7 @@ def is_retryable_error(error: Exception) -> bool:
     if isinstance(error, errors.APIError):
         return error.code in RETRYABLE_STATUS_CODES
 
-    return isinstance(error, (TimeoutError, ConnectionError))
+    return isinstance(error, TimeoutError | ConnectionError)
 
 
 def generate_with_retry(client, model: str, message: str):
@@ -63,7 +63,7 @@ def generate_with_retry(client, model: str, message: str):
             if is_last_attempt or not is_retryable_error(error):
                 raise
 
-            exponential_delay = BASE_DELAY_SECONDS * (2 ** attempt)
+            exponential_delay = BASE_DELAY_SECONDS * (2**attempt)
             delay = min(exponential_delay, MAX_DELAY_SECONDS)
 
             # Add randomized jitter to avoid synchronized retries.
@@ -98,6 +98,7 @@ def log_ask_error(stage: str, error: Exception) -> None:
 # Health Check Endpoint
 # --------------------------------------------------
 
+
 @app.get("/health")
 def health(settings: SettingsDep) -> dict:
     """Check whether the FastAPI application is running."""
@@ -112,6 +113,7 @@ def health(settings: SettingsDep) -> dict:
 # --------------------------------------------------
 # Database Readiness Endpoint
 # --------------------------------------------------
+
 
 @app.get("/ready")
 def ready() -> dict:
@@ -150,6 +152,7 @@ def ready() -> dict:
 # Gemini API Usage Endpoint
 # --------------------------------------------------
 
+
 @app.get("/usage")
 def usage() -> dict:
     """Return Gemini token usage and estimated API costs."""
@@ -161,9 +164,9 @@ def usage() -> dict:
 # AI Chat Endpoint
 # --------------------------------------------------
 
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, settings: SettingsDep):
-
     if not settings.gemini_api_key:
         raise HTTPException(
             status_code=503,
@@ -192,14 +195,12 @@ def chat(request: ChatRequest, settings: SettingsDep):
 
         except Exception as error:
             print(
-                f"Primary model failed: "
-                f"{type(error).__name__}: {error}",
+                f"Primary model failed: {type(error).__name__}: {error}",
                 flush=True,
             )
 
             print(
-                f"Trying fallback model: "
-                f"{settings.gemini_fallback_model}",
+                f"Trying fallback model: {settings.gemini_fallback_model}",
                 flush=True,
             )
 
@@ -222,8 +223,7 @@ def chat(request: ChatRequest, settings: SettingsDep):
 
         except Exception as error:
             print(
-                f"Usage tracking failed: "
-                f"{type(error).__name__}: {error}",
+                f"Usage tracking failed: {type(error).__name__}: {error}",
                 flush=True,
             )
 
@@ -242,8 +242,7 @@ def chat(request: ChatRequest, settings: SettingsDep):
 
     except Exception as error:
         print(
-            f"Gemini API error: "
-            f"{type(error).__name__}: {error}",
+            f"Gemini API error: {type(error).__name__}: {error}",
             flush=True,
         )
 
@@ -252,13 +251,14 @@ def chat(request: ChatRequest, settings: SettingsDep):
             detail="Unable to generate an AI response",
         ) from None
 
+
 # --------------------------------------------------
 # RAG Question Answering Endpoint
 # --------------------------------------------------
 
+
 @app.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest, settings: SettingsDep):
-
     if not settings.gemini_api_key:
         raise HTTPException(
             status_code=503,
@@ -365,7 +365,7 @@ Document excerpts:
         # Include only sources referenced in the generated answer.
         # This is a preliminary citation mechanism;
         # source-to-claim accuracy will be checked during evaluation.
-        
+
         import re
 
         # Recognize both [Source 5] and [Source 7, Source 8].
@@ -374,9 +374,7 @@ Document excerpts:
             response.text,
         )
         cited_indices = {
-            int(match)
-            for group in citation_groups
-            for match in re.findall(r"Source\s+(\d+)", group)
+            int(match) for group in citation_groups for match in re.findall(r"Source\s+(\d+)", group)
         }
         # Remove duplicate citations from the same PDF page.
         citations = []

@@ -27,9 +27,7 @@ def test_ready_with_database(client, monkeypatch):
     mock_connection = MagicMock()
 
     mock_connection.__enter__.return_value = mock_connection
-    mock_connection.cursor.return_value.__enter__.return_value = (
-        MagicMock()
-    )
+    mock_connection.cursor.return_value.__enter__.return_value = MagicMock()
 
     mock_connect = MagicMock(return_value=mock_connection)
 

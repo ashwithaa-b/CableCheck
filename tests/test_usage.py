@@ -78,20 +78,13 @@ def test_record_usage(tmp_path, monkeypatch):
         total_token_count=155,
     )
 
-    response = SimpleNamespace(
-        usage_metadata=metadata
-    )
+    response = SimpleNamespace(usage_metadata=metadata)
 
-    usage.record_usage(
-        "gemini-3.6-flash",
-        response
-    )
+    usage.record_usage("gemini-3.6-flash", response)
 
     assert test_file.exists()
 
-    record = json.loads(
-        test_file.read_text(encoding="utf-8").strip()
-    )
+    record = json.loads(test_file.read_text(encoding="utf-8").strip())
 
     assert record["model"] == "gemini-3.6-flash"
     assert record["input_tokens"] == 2
@@ -99,9 +92,7 @@ def test_record_usage(tmp_path, monkeypatch):
     assert record["thinking_tokens"] == 144
     assert record["total_tokens"] == 155
 
-    assert record["estimated_cost_usd"] == pytest.approx(
-        0.00057525
-    )
+    assert record["estimated_cost_usd"] == pytest.approx(0.00057525)
 
 
 # TEST 6: Verify usage summary
@@ -132,9 +123,7 @@ def test_usage_summary(tmp_path, monkeypatch):
     ]
 
     test_file.write_text(
-        "\n".join(
-            json.dumps(record) for record in records
-        ) + "\n",
+        "\n".join(json.dumps(record) for record in records) + "\n",
         encoding="utf-8",
     )
 
@@ -146,6 +135,4 @@ def test_usage_summary(tmp_path, monkeypatch):
     assert summary["thinking_tokens"] == 45
     assert summary["total_tokens"] == 90
 
-    assert summary["estimated_cost_usd"] == pytest.approx(
-        0.0002925
-    )
+    assert summary["estimated_cost_usd"] == pytest.approx(0.0002925)

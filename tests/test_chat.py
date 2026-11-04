@@ -29,9 +29,7 @@ def test_chat_without_api_key(client):
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == (
-        "Gemini API key is not configured"
-    )
+    assert response.json()["detail"] == ("Gemini API key is not configured")
 
 
 def test_chat_success(client, monkeypatch):
@@ -41,9 +39,7 @@ def test_chat_success(client, monkeypatch):
 
     mock_client = MagicMock()
 
-    mock_client.models.generate_content.return_value = (
-        SimpleNamespace(text="Copper has better conductivity.")
-    )
+    mock_client.models.generate_content.return_value = SimpleNamespace(text="Copper has better conductivity.")
 
     monkeypatch.setattr(
         main.genai,
@@ -63,9 +59,7 @@ def test_chat_success(client, monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json()["answer"] == (
-        "Copper has better conductivity."
-    )
+    assert response.json()["answer"] == ("Copper has better conductivity.")
     assert response.json()["model"] == "gemini-3.6-flash"
 
     mock_client.models.generate_content.assert_called_once()
@@ -101,9 +95,7 @@ def test_chat_fallback(client, monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json()["answer"] == (
-        "Fallback model response"
-    )
+    assert response.json()["answer"] == ("Fallback model response")
     assert response.json()["model"] == "gemini-3.7-flash"
 
     assert mock_client.models.generate_content.call_count == 2
@@ -116,9 +108,7 @@ def test_chat_api_failure(client, monkeypatch):
 
     mock_client = MagicMock()
 
-    mock_client.models.generate_content.side_effect = (
-        RuntimeError("Gemini API unavailable")
-    )
+    mock_client.models.generate_content.side_effect = RuntimeError("Gemini API unavailable")
 
     monkeypatch.setattr(
         main.genai,
@@ -132,6 +122,4 @@ def test_chat_api_failure(client, monkeypatch):
     )
 
     assert response.status_code == 502
-    assert response.json()["detail"] == (
-        "Unable to generate an AI response"
-    )
+    assert response.json()["detail"] == ("Unable to generate an AI response")

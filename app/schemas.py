@@ -10,8 +10,11 @@ class ChatResponse(BaseModel):
     model: str
 
     # --------------------------------------------------
+
+
 # RAG Question Answering Models
 # --------------------------------------------------
+
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=1)

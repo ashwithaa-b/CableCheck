@@ -11,9 +11,7 @@ def test_retry_succeeds_after_temporary_failures(monkeypatch):
 
     mock_client = MagicMock()
 
-    expected_response = SimpleNamespace(
-        text="CableCheck response"
-    )
+    expected_response = SimpleNamespace(text="CableCheck response")
 
     mock_client.models.generate_content.side_effect = [
         TimeoutError("Temporary timeout"),
@@ -44,9 +42,7 @@ def test_permanent_error_does_not_retry(monkeypatch):
 
     mock_client = MagicMock()
 
-    mock_client.models.generate_content.side_effect = RuntimeError(
-        "Invalid request"
-    )
+    mock_client.models.generate_content.side_effect = RuntimeError("Invalid request")
 
     mock_sleep = MagicMock()
     monkeypatch.setattr(main.time, "sleep", mock_sleep)
@@ -67,9 +63,7 @@ def test_retry_stops_after_max_attempts(monkeypatch):
 
     mock_client = MagicMock()
 
-    mock_client.models.generate_content.side_effect = TimeoutError(
-        "Service unavailable"
-    )
+    mock_client.models.generate_content.side_effect = TimeoutError("Service unavailable")
 
     mock_sleep = MagicMock()
     monkeypatch.setattr(main.time, "sleep", mock_sleep)

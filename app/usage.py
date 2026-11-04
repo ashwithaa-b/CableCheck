@@ -31,10 +31,7 @@ def calculate_cost(
 
     billable_output_tokens = output_tokens + thinking_tokens
 
-    cost = (
-        input_tokens * pricing["input"]
-        + billable_output_tokens * pricing["output"]
-    ) / 1_000_000
+    cost = (input_tokens * pricing["input"] + billable_output_tokens * pricing["output"]) / 1_000_000
 
     return round(cost, 10)
 
@@ -105,9 +102,7 @@ def get_usage_summary() -> dict:
                 summary["total_requests"] += 1
                 summary["input_tokens"] += record.get("input_tokens", 0)
                 summary["output_tokens"] += record.get("output_tokens", 0)
-                summary["thinking_tokens"] += record.get(
-                    "thinking_tokens", 0
-                )
+                summary["thinking_tokens"] += record.get("thinking_tokens", 0)
                 summary["total_tokens"] += record.get("total_tokens", 0)
 
                 cost = record.get("estimated_cost_usd")
@@ -128,8 +123,6 @@ def get_usage_summary() -> dict:
                 else:
                     summary["requests_with_unknown_cost"] += 1
 
-    summary["estimated_cost_usd"] = round(
-        summary["estimated_cost_usd"], 10
-    )
+    summary["estimated_cost_usd"] = round(summary["estimated_cost_usd"], 10)
 
     return summary

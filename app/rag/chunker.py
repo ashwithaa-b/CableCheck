@@ -23,12 +23,14 @@ def chunk_pages(pages, chunk_size=1000, overlap=200):
             chunk_text = text[start:end].strip()
 
             if chunk_text:
-                chunks.append({
-                    "document": page["document"],
-                    "page": page["page"],
-                    "chunk_id": chunk_number,
-                    "text": chunk_text
-                })
+                chunks.append(
+                    {
+                        "document": page["document"],
+                        "page": page["page"],
+                        "chunk_id": chunk_number,
+                        "text": chunk_text,
+                    }
+                )
 
             if end == len(text):
                 break

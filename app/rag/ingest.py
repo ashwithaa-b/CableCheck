@@ -4,9 +4,8 @@ from pathlib import Path
 import psycopg
 from sentence_transformers import SentenceTransformer
 
-from app.rag.parser import parse_pdf
 from app.rag.chunker import chunk_pages
-
+from app.rag.parser import parse_pdf
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 PDF_FOLDER = Path("data/raw/polycab")
@@ -31,7 +30,6 @@ def ingest_documents():
     total_skipped = 0
 
     with psycopg.connect(database_url) as conn:
-
         for pdf_path in pdf_files:
             print(f"\nProcessing: {pdf_path.name}")
 
@@ -54,11 +52,7 @@ def ingest_documents():
                 )
                 existing = set(cur.fetchall())
 
-            pending = [
-                chunk
-                for chunk in chunks
-                if (chunk["page"], chunk["chunk_id"]) not in existing
-            ]
+            pending = [chunk for chunk in chunks if (chunk["page"], chunk["chunk_id"]) not in existing]
 
             skipped = len(chunks) - len(pending)
             total_skipped += skipped
@@ -67,7 +61,7 @@ def ingest_documents():
             print(f"Remaining: {len(pending)}")
 
             for start in range(0, len(pending), BATCH_SIZE):
-                batch = pending[start:start + BATCH_SIZE]
+                batch = pending[start : start + BATCH_SIZE]
 
                 texts = [chunk["text"] for chunk in batch]
 
@@ -79,11 +73,8 @@ def ingest_documents():
                 )
 
                 with conn.cursor() as cur:
-                    for chunk, embedding in zip(batch, embeddings):
-
-                        vector = "[" + ",".join(
-                            str(float(value)) for value in embedding
-                        ) + "]"
+                    for chunk, embedding in zip(batch, embeddings, strict=True):
+                        vector = "[" + ",".join(str(float(value)) for value in embedding) + "]"
 
                         cur.execute(
                             """
@@ -120,10 +111,7 @@ def ingest_documents():
 
                 total_stored += len(batch)
 
-                print(
-                    f"Stored {start + len(batch)}/{len(pending)} "
-                    f"remaining chunks for {pdf_path.name}"
-                )
+                print(f"Stored {start + len(batch)}/{len(pending)} remaining chunks for {pdf_path.name}")
 
     print("\n================================")
     print("INGESTION COMPLETED")

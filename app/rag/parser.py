@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from pypdf import PdfReader
 
 
@@ -19,11 +20,7 @@ def parse_pdf(pdf_path: str):
         if not text.strip():
             continue
 
-        pages.append({
-            "document": document_name,
-            "page": page_number,
-            "text": text.strip()
-        })
+        pages.append({"document": document_name, "page": page_number, "text": text.strip()})
 
     return pages
 

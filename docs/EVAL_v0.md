@@ -2,9 +2,9 @@
 
 ## 1. Evaluation Overview
 
-**Project:** CableCheck  
-**Evaluation stage:** Week 3  
-**Evaluation date:** 4 November 2026  
+**Project:** CableCheck
+**Evaluation stage:** Week 3
+**Evaluation date:** 4 November 2026
 **Status:** In Progress
 
 ### Objective
@@ -19,7 +19,7 @@ Currently ingested:
 |---|---|
 | Polycab India | FY2024, FY2025, FY2026 |
 
-**Total PDF pages:** 1,252  
+**Total PDF pages:** 1,252
 **Total document chunks:** 6,459
 
 Other manufacturers' annual reports have not yet been ingested.
@@ -81,7 +81,7 @@ Additional standalone segment information:
 
 ### Question 7: Polycab Operating Profit Margin
 
-**Reporting basis:** Standalone  
+**Reporting basis:** Standalone
 **Financial year:** FY2024-25
 
 Segment operating results: INR 25,386.59 million

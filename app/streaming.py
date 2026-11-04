@@ -59,21 +59,14 @@ def generate_stream(message: str):
             )
 
             if response_started:
-                yield (
-                    'data: {"error": "Streaming interrupted", '
-                    '"done": true}\n\n'
-                )
+                yield ('data: {"error": "Streaming interrupted", "done": true}\n\n')
                 return
 
-    yield (
-        'data: {"error": "Unable to generate an AI response", '
-        '"done": true}\n\n'
-    )
+    yield ('data: {"error": "Unable to generate an AI response", "done": true}\n\n')
 
 
 @router.post("/chat/stream")
 def stream_chat(request: ChatRequest):
-
     settings = get_settings()
 
     if not settings.gemini_api_key:
