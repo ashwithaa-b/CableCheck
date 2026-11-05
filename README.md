@@ -1,220 +1,141 @@
-# GENAI PROJECT: CABLECHECK
+# CableCheck
 
-## Project Title
+**AI-powered cable and switchgear vendor intelligence**
 
-**CableCheck — AI-Powered Cable and Switchgear Vendor Intelligence System**
+CableCheck is a college Generative AI project for answering procurement and
+vendor-research questions using evidence from manufacturers' annual reports.
+It combines PDF text extraction, page-aware chunking, vector retrieval, and
+Gemini-generated answers with document citations.
 
-## Problem
+## Project status — completed through Week 3
 
-Procurement engineers working in Engineering, Procurement and Construction (EPC) companies need accurate technical and financial information about cable and switchgear manufacturers before selecting vendors.
+The document-processing and retrieval-augmented generation (RAG) pipeline is
+implemented. The `POST /ask` endpoint retrieves report passages from PostgreSQL
+with pgvector, supplies them to Gemini, and returns an answer with citations to
+the source document and PDF page.
 
-Important information such as product specifications, voltage ratings, manufacturing capabilities, revenue, profit margins and export performance is often available only in lengthy annual reports and Business Responsibility and Sustainability Reports (BRSRs).
+The current retrieval baseline uses SentenceTransformers
+(`all-MiniLM-L6-v2`) to embed questions and chunks, then performs semantic
+nearest-neighbor search with pgvector. For each matching chunk, it also
+retrieves nearby chunks from the same document and PDF page (up to two chunk
+IDs on either side). This adds local context; it is not a second search method.
 
-Manually searching these documents is time-consuming. Traditional semantic search systems may also fail to distinguish exact technical terms such as "400 kV", "EHV", "W&C" and "FMEG".
-
-CableCheck aims to solve this problem using Generative AI and hybrid information retrieval.
-
-## Who It Is For
-
-* Procurement engineers working in EPC companies.
-* Electrical engineers evaluating cable and switchgear manufacturers.
-* Vendor assessment and supply chain teams.
-* Technical professionals researching manufacturers' products and financial performance.
-
-## Project Objective
-
-To develop an AI-powered application that retrieves accurate technical and financial information from manufacturers' annual reports and BRSRs.
-
-The system will allow users to ask natural-language questions and receive evidence-based answers with document citations.
-
-## Signature Feature
-
-**Exact-Term Highlighter**
-
-CableCheck will highlight important technical terms, voltage ratings and financial segment codes within retrieved PDF snippets.
-
-For example, when a user searches for "400 kV EHV cables", the system will identify and highlight the matching technical terms in the supporting document.
-
-Each answer will include the source document and page number.
-
-## Hardest Problem
-
-**Exact-Term Hybrid Search and Re-Ranking**
-
-Traditional vector search retrieves information based on semantic similarity but may return incorrect results for questions involving exact voltage ratings, technical codes or financial terminology.
-
-CableCheck will address this challenge by combining:
-
-1. BM25 keyword search.
-2. Vector-based semantic search.
-3. Reciprocal Rank Fusion.
-4. Cross-encoder re-ranking.
-5. Custom tokenization for technical terms.
-
-The system will preserve important terms such as "400 kV", "EHV", "W&C" and "FMEG" during keyword indexing and retrieval.
-
-Retrieval performance will be evaluated using a 60-question exact-term test dataset.
+**Hybrid search is planned, not implemented.** BM25 keyword search, reciprocal
+rank fusion (RRF), and reranking are not part of the current retrieval
+pipeline. Retrieval is semantic vector search only.
 
 ## Dataset
 
-The project will use annual reports and BRSRs published by six electrical equipment manufacturers.
+Three Polycab India annual reports are currently ingested:
 
-| Company              | Documents                | Period  |
-| -------------------- | ------------------------ | ------- |
-| Polycab India        | Annual Reports and BRSRs | 3 years |
-| KEI Industries       | Annual Reports and BRSRs | 3 years |
-| Havells India        | Annual Reports and BRSRs | 3 years |
-| ABB India            | Annual Reports and BRSRs | 3 years |
-| Siemens Ltd          | Annual Reports and BRSRs | 3 years |
-| Hitachi Energy India | Annual Reports and BRSRs | 3 years |
+| Report | PDF pages in corpus |
+|---|---:|
+| FY2023-24 | Included |
+| FY2024-25 | Included |
+| FY2025-26 | Included |
 
-**Target dataset:** At least 18 annual reports and 6,000 pages.
+Together, the corpus contains 1,252 PDF pages and 6,459 document chunks.
+KEI Industries reports have not been ingested, so the system should abstain
+when those reports are needed.
 
-Documents will be collected from the manufacturers' official investor relations websites.
+## Week 3 evaluation
 
-Document counts, page counts and applicable usage terms will be recorded after collection.
+The initial qualitative evaluation covered the 10 questions in
+[`docs/QUESTIONS.md`](./docs/QUESTIONS.md). Results are documented in
+[`docs/EVAL_v0.md`](./docs/EVAL_v0.md):
 
-## Key Features
+| Result | Questions |
+|---|---:|
+| Full passes | 7 |
+| Provisional passes | 2 |
+| Partial passes | 1 |
 
-### 1. Document Processing (Planned)
+This is a qualitative, question-by-question evaluation, not a statistical
+accuracy estimate. No Recall@k or other aggregate retrieval benchmark has
+been measured. The provisional results need citation verification; one
+partial result exposed an inconsistency in reported financial figures.
 
-* Extract text from PDF documents.
-* Split documents into searchable chunks.
-* Preserve company names, financial years and page numbers.
+## Technology
 
-### 2. Hybrid Search (Planned)
+| Area | Implemented |
+|---|---|
+| API | Python 3.12, FastAPI, Pydantic |
+| PDF processing | pypdf for text extraction with PDF page numbers |
+| Chunking and embeddings | Page-aware text chunks; SentenceTransformers `all-MiniLM-L6-v2` |
+| Retrieval and storage | PostgreSQL 16, pgvector, Psycopg 3 |
+| Answer generation | Google Gemini through the Google GenAI SDK |
+| Deployment and checks | Docker Compose, GitHub Actions, pytest, Ruff |
 
-* BM25 keyword retrieval.
-* Vector-based semantic retrieval.
-* Combined search results using Reciprocal Rank Fusion.
-* Cross-encoder re-ranking.
+BM25, RRF, reranking, and a user-facing frontend remain planned work.
 
-### 3. AI Question Answering
+## API
 
-* Accept natural-language questions.
-* Generate responses using Google Gemini.
-* Support primary and fallback AI models.
-* Provide streaming responses.
+Run the API locally as described in [Setup](#setup). Interactive API
+documentation is available at `http://localhost:8001/docs`.
 
-**Planned enhancements:**
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Application health |
+| `/ready` | GET | PostgreSQL connectivity check |
+| `/usage` | GET | Gemini token usage and estimated costs |
+| `/chat` | POST | Gemini response to a general message |
+| `/chat/stream` | POST | Server-sent event stream from Gemini |
+| `/ask` | POST | RAG answer grounded in retrieved report passages |
 
-* Retrieve relevant document passages.
-* Generate evidence-based answers.
-* Provide PDF citations.
+Example `/ask` request:
 
-### 4. Exact-Term Highlighting (Planned)
-
-* Highlight voltage ratings and technical terms.
-* Highlight financial segment codes.
-* Display relevant source passages.
-
-### 5. Vendor Assessment Agent (Planned)
-
-* Retrieve manufacturer information.
-* Draft vendor assessment memos.
-* Generate vendor clarification emails.
-* Require procurement manager approval before final saving or sending.
-
-## Example Questions
-
-1. Does KEI Industries manufacture EHV cables, and up to what voltage?
-2. What was Polycab's wires and cables segment revenue and margin last year?
-3. Which manufacturers report export revenue above 10% of sales?
-
-These questions represent the intended RAG functionality. Document-grounded answers will be supported after the retrieval pipeline is implemented.
-
-## Evaluation
-
-CableCheck will compare vector-only retrieval against hybrid retrieval.
-
-**Evaluation dataset:** 60 exact-term questions.
-
-**Primary metric:** Recall@5.
-
-**Target:** 90% or higher.
-
-The evaluation will measure whether relevant supporting passages appear among the top five retrieved results.
-
-## Technology Stack
-
-### Currently Implemented
-
-* Python 3.12
-* FastAPI
-* Google Gemini API
-* Google GenAI Python SDK
-* Pydantic
-* PostgreSQL 16
-* pgvector Docker image
-* Psycopg 3
-* Docker
-* Docker Compose
-* pytest
-* GitHub Actions
-* Render
-
-### Planned Technologies
-
-* PyMuPDF
-* Sentence Transformers
-* BM25
-* FAISS or pgvector-based vector retrieval
-* Cross-Encoder
-* Streamlit or another suitable frontend framework
-
-## Week 2 — Backend Development and Deployment
-
-CableCheck's Week 2 implementation establishes the backend infrastructure required for future document retrieval and AI-powered vendor intelligence.
-
-### Implemented Features
-
-* FastAPI REST API.
-* Google Gemini AI integration.
-* Primary and fallback Gemini models.
-* Streaming response endpoint.
-* Token usage tracking.
-* Thinking-token tracking.
-* Estimated API cost calculations.
-* PostgreSQL 16 with pgvector.
-* Docker and Docker Compose.
-* Health and database readiness endpoints.
-* Automated testing with pytest.
-* GitHub Actions continuous integration.
-* Cloud deployment using Render.
-
-**In progress:** Exponential-backoff retries with jitter.
-
-### API Endpoints
-
-| Endpoint       | Method | Description                           |
-| -------------- | ------ | ------------------------------------- |
-| `/health`      | GET    | Application health check              |
-| `/ready`       | GET    | PostgreSQL database readiness         |
-| `/usage`       | GET    | Token usage and estimated API costs   |
-| `/chat`        | POST   | Gemini AI question answering          |
-| `/chat/stream` | POST   | Streaming Gemini responses            |
-| `/docs`        | GET    | Interactive Swagger API documentation |
-
-### Local Setup
-
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/ashwithaa-b/CableCheck.git
-cd CableCheck
+```json
+{
+  "question": "What was Polycab India's W&C segment revenue in FY2024-25?"
+}
 ```
 
-#### 2. Install Dependencies
+The response contains the question, answer, model, and citations. Citations
+are extracted from source references in the generated answer; automatic
+claim-to-source verification is not implemented.
 
-```bash
-pip install -r requirements.txt
+## Gemini fallback and retries
+
+The synchronous `/chat` and `/ask` endpoints call the configured primary
+Gemini model first and can use the configured fallback model if primary
+generation fails. `/ask` also tries the fallback when the primary response is
+empty, and avoids a duplicate attempt when both model settings are identical.
+Each model attempt uses up to three calls for retryable temporary failures
+(selected HTTP errors, timeouts, and connection errors), with exponential
+backoff and randomized jitter. Non-retryable errors are not retried.
+
+`/chat/stream` also has a fallback model, but does not use this retry
+mechanism: it moves to the fallback if the primary fails before emitting
+content. If streaming fails after content has started, it reports an
+interrupted stream instead of switching models.
+
+Automated tests mock Gemini; running the test suite does not make Gemini API
+calls.
+
+## Setup
+
+### Prerequisites
+
+- Python 3.12
+- Docker Desktop with Docker Compose, for the local PostgreSQL/pgvector
+  service
+- A Gemini API key to use `/chat` and `/ask`
+
+### Install Python packages
+
+The current `requirements.txt` is UTF-16 encoded with a truncated final line,
+so pip cannot parse it. It also does not list the RAG dependencies pypdf and
+SentenceTransformers. Until the requirements files are corrected, install
+the packages directly:
+
+```powershell
+python -m pip install fastapi pydantic-settings uvicorn google-genai "psycopg[binary]" python-dotenv pypdf sentence-transformers pytest httpx ruff pre-commit
 ```
 
-#### 3. Configure Environment Variables
+### Configure Gemini
 
-Create a `.env` file using `.env.example` as a template.
-
-Example:
+Copy `.env.example` to `.env` and add a valid API key. The model settings are
+optional; the application defaults are shown below.
 
 ```env
 GEMINI_API_KEY=your_api_key
@@ -222,305 +143,112 @@ GEMINI_MODEL=gemini-3.6-flash
 GEMINI_FALLBACK_MODEL=gemini-3.5-flash-lite
 ```
 
-Replace `your_api_key` with a valid Gemini API key.
+Do not commit `.env` or expose API keys.
 
-**Security:** Never commit `.env` files or API keys to GitHub.
+### Start PostgreSQL and initialize its table
 
-## Docker Setup
+Start only the database service:
 
-CableCheck uses Docker Compose to run the FastAPI backend and PostgreSQL database.
-
-### Build and Start Containers
-
-```bash
-docker compose up -d --build
+```powershell
+docker compose up -d db
 ```
 
-### Check Container Status
+The API code expects a `document_chunks` table but does not currently create
+the table or run migrations automatically. Initialize it once in the local
+database:
 
-```bash
-docker compose ps
+```powershell
+docker compose exec db psql -U cablecheck -d cablecheck -c "CREATE EXTENSION IF NOT EXISTS vector; CREATE TABLE IF NOT EXISTS document_chunks (document_name TEXT NOT NULL, page_number INTEGER NOT NULL, chunk_id INTEGER NOT NULL, content TEXT NOT NULL, embedding VECTOR(384), PRIMARY KEY (document_name, page_number, chunk_id));"
 ```
 
-Expected services:
+Set `DATABASE_URL` in the same shell in which you run the API or ingestion
+script:
 
-* `cablecheck-api` — FastAPI application.
-* `cablecheck-db` — PostgreSQL database.
-
-### Stop Containers
-
-```bash
-docker compose down
+```powershell
+$env:DATABASE_URL = "postgresql://cablecheck:cablecheck_local@localhost:5432/cablecheck"
 ```
 
-### Restart Containers
+### Ingest reports and run the API
 
-```bash
-docker compose up -d
+From the repository root, run the idempotent ingestion script to parse PDFs
+from `data/raw/polycab`, split text into chunks, generate embeddings, and store
+them in PostgreSQL:
+
+```powershell
+python -m app.rag.ingest
 ```
 
-### Local Application URLs
+Then start the API:
 
-| Service            | URL                          |
-| ------------------ | ---------------------------- |
-| API Documentation  | http://localhost:8001/docs   |
-| Health Check       | http://localhost:8001/health |
-| Database Readiness | http://localhost:8001/ready  |
-| API Usage          | http://localhost:8001/usage  |
-
-### PostgreSQL Configuration
-
-The Docker Compose setup includes:
-
-* PostgreSQL 16.
-* pgvector-enabled PostgreSQL image.
-* Persistent database volume.
-* Database health checks.
-* FastAPI-to-PostgreSQL connectivity.
-
-The application connects to PostgreSQL using the `DATABASE_URL` environment variable.
-
-## Database Readiness Testing
-
-The `/ready` endpoint checks whether PostgreSQL is available.
-
-### Database Available
-
-Expected response:
-
-```json
-{
-  "status": "ready",
-  "database": "connected"
-}
+```powershell
+uvicorn app.main:app --reload --port 8001
 ```
 
-HTTP status: `200 OK`
+The application is available at `http://localhost:8001`; use
+`http://localhost:8001/docs` to explore its endpoints. `/ask` requires both a
+configured Gemini API key and a populated, reachable database.
 
-### Database Unavailable
+**Docker API note:** The current Dockerfile installs only `requirements.txt`,
+which pip cannot parse as described above and which omits the RAG packages.
+Therefore the full API image is not a verified setup path at this milestone;
+the Compose PostgreSQL service can be used with the local Python API steps
+above.
 
-Stop PostgreSQL:
+## Tests and pre-commit
 
-```bash
-docker compose stop db
-```
+Run the automated tests and repository pre-commit checks:
 
-Check:
-
-`http://localhost:8001/ready`
-
-Expected response:
-
-```json
-{
-  "detail": "Database is unavailable"
-}
-```
-
-HTTP status: `503 Service Unavailable`
-
-Restart PostgreSQL:
-
-```bash
-docker compose start db
-```
-
-**Verification:** Both database availability and failure handling have been tested successfully using Docker.
-
-## Automated Testing
-
-CableCheck uses pytest for automated backend testing.
-
-### Run Tests
-
-```bash
+```powershell
 python -m pytest -q
+pre-commit run --all-files
 ```
 
-### Latest Verified Results
+**Week 3 test result:** 24 passed.
 
-```text
-14 passed, 2 warnings
-```
+The test suite covers API behavior, Gemini fallback and retry behavior,
+database readiness, usage tracking, and document search. Gemini calls are
+mocked.
 
-The two warnings are dependency deprecation warnings and do not represent test failures.
+## Limitations and Week 4 improvements
 
-### Test Coverage Areas
+Current limitations:
 
-* Application health checks.
-* API cost calculations.
-* Token usage recording.
-* Token usage summaries.
-* Database readiness.
-* Database connection failure handling.
-* Missing Gemini API key.
-* Successful Gemini responses.
-* Primary model failure and fallback.
-* Gemini API failure handling.
+- Retrieval uses semantic similarity only; there are no company, fiscal-year,
+  reporting-basis, or metric filters.
+- Citation extraction does not establish that each citation supports the
+  specific claim next to it.
+- The Q5 citation support and Q9 EHV-manufacturing coverage need verification.
+- Q10 exposed a financial-grounding issue: related revenue and total-income
+  figures need clearer metric, reporting-basis, and source treatment.
+- The ten-question evaluation is qualitative; no retrieval benchmark has been
+  run.
+- Only Polycab reports are ingested; questions about other manufacturers
+  cannot yet be answered from their reports.
+- The dependency manifest and Docker API build path need correction before
+  setup is reproducible from a clean environment.
 
-Gemini API calls are mocked during automated tests to avoid unnecessary API requests and costs.
+Planned Week 4 work:
 
-## Gemini API Integration
+1. Verify the citations and report evidence for Q5 and Q9, and re-check each
+   figure and accounting basis in Q10.
+2. Improve retrieval with company, year, reporting-basis, and metric metadata
+   or filters.
+3. Add claim-to-source checks for financial figures and labels.
+4. Define a repeatable evaluation with source passages and citation checks
+   before reporting retrieval metrics.
+5. Improve clean-environment installation and Docker setup; expand the corpus
+   before evaluating other manufacturers.
+6. Implement and evaluate BM25, reciprocal-rank fusion, and reranking as
+   planned retrieval enhancements.
 
-CableCheck uses Google Gemini for AI-generated responses.
+## Deployment
 
-### Primary Model
-
-`gemini-3.6-flash`
-
-### Fallback Model
-
-`gemini-3.5-flash-lite`
-
-The application attempts to use the primary model first.
-
-If the primary model fails, it attempts the configured fallback model.
-
-If both models fail, the application returns an error response.
-
-### Planned Reliability Improvement
-
-* Exponential-backoff retry logic.
-* Randomized jitter.
-* Additional retry-specific automated tests.
-
-## Token Usage and Cost Tracking
-
-CableCheck records AI usage information, including:
-
-* Request timestamp.
-* Model name.
-* Input tokens.
-* Output tokens.
-* Thinking tokens.
-* Total tokens.
-* Estimated API cost.
-
-Usage records are stored locally in:
-
-`data/usage.jsonl`
-
-### Cost Estimation
-
-The application estimates costs using configured model pricing.
-
-For `gemini-3.6-flash`, the currently configured rates are:
-
-| Token Type                 | Price per 1 Million Tokens |
-| -------------------------- | -------------------------- |
-| Input                      | $0.75                      |
-| Output, including thinking | $3.75                      |
-
-These are configured estimates and should be checked against current provider pricing.
-
-Models without verified pricing are reported with unknown estimated cost rather than an invented value.
-
-For additional information, see:
-
-`docs/COST.md`
-
-**Note:** Usage records stored on an ephemeral cloud filesystem may be lost when the service restarts or redeploys.
-
-## Live Application — Render
-
-CableCheck has been deployed to Render.
-
-### Live API
-
-https://cablecheck.onrender.com
-
-### Interactive API Documentation
-
-https://cablecheck.onrender.com/docs
-
-### Health Endpoint
-
-https://cablecheck.onrender.com/health
-
-### Usage Endpoint
-
-https://cablecheck.onrender.com/usage
-
-### Deployment Notes
-
-* The application runs as a Render web service.
-* The deployment uses the free service tier.
-* Free services may sleep during inactivity.
-* The first request after inactivity may take additional time.
-* Environment variables must be configured securely in Render.
-* GitHub Actions is used for continuous integration.
-
-**Database limitation:** A PostgreSQL connection has been verified locally through Docker Compose. A cloud PostgreSQL connection has not yet been confirmed.
-
-The `/ready` endpoint requires `DATABASE_URL` and returns HTTP 503 if the database is not configured or cannot be reached.
-
-The Render health check should continue using `/health` until a cloud database is configured.
-
-## Development Plan
-
-### Weeks 1–6: Retrieval and Question Answering
-
-* Collect company reports.
-* Extract PDF text.
-* Build a vector search baseline.
-* Implement BM25 and hybrid search.
-* Add re-ranking and exact-term highlighting.
-* Evaluate retrieval accuracy.
-
-### Weeks 7–12: AI Agent
-
-* Build vendor assessment workflows.
-* Generate assessment memos.
-* Draft vendor clarification emails.
-* Implement manager approval.
-* Test the complete system.
-
-## Project Status
-
-### Week 1 — Project Setup and Dataset Collection
-
-* Project repository created.
-* Initial documentation prepared.
-* Dataset collection tools added.
-* Annual report collection initiated.
-
-### Week 2 — Backend Infrastructure
-
-* FastAPI backend implemented.
-* Gemini API integrated.
-* Primary and fallback models configured.
-* Streaming endpoint implemented.
-* Token usage tracking added.
-* Estimated cost calculation added.
-* PostgreSQL connectivity implemented.
-* Docker Compose configured.
-* Database failure handling verified.
-* 14 automated tests passing.
-* Render deployment established.
-
-**Remaining Week 2 work:**
-
-* Implement exponential-backoff retries with jitter.
-* Complete final code-quality checks.
-* Commit and push the latest changes.
-* Verify the final GitHub Actions run.
-
-### Week 3 — Planned
-
-* PDF text extraction.
-* Document chunking.
-* Embedding generation.
-* Vector database integration.
-* Retrieval-augmented generation (RAG).
+The API has been deployed to Render at
+[cablecheck.onrender.com](https://cablecheck.onrender.com). The free service
+may sleep when inactive. Local PostgreSQL connectivity is implemented, but a
+cloud PostgreSQL connection has not been confirmed; consequently, deployed
+`/ask` functionality depends on database configuration not yet verified.
 
 ## Repository
 
-GitHub: https://github.com/ashwithaa-b/CableCheck
-
-## Security Notes
-
-* Keep API keys in environment variables.
-* Do not commit `.env` files.
-* Use mock API responses in automated tests.
-* Do not expose database credentials in public repositories.
-* Use secure database credentials for production deployments.
+[GitHub: ashwithaa-b/CableCheck](https://github.com/ashwithaa-b/CableCheck)
